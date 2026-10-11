@@ -191,9 +191,28 @@ export const AuthScreen: React.FC = () => {
             {authError && (
               <div className="p-3.5 rounded-lg bg-red-950/60 border border-red-800/80 text-xs text-red-200 flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
+                <div className="space-y-2 flex-1 min-w-0">
                   <p className="font-medium">Authentication Notice</p>
-                  <p className="text-red-300 leading-relaxed">{authError}</p>
+                  <p className="text-red-300 leading-relaxed break-words">{authError}</p>
+                  {typeof window !== 'undefined' && authError.includes('Authorized domains') && (
+                    <div className="pt-1 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigator.clipboard.writeText(window.location.hostname)}
+                        className="px-2.5 py-1 bg-slate-900 border border-red-700/80 rounded text-[11px] font-mono text-white hover:bg-slate-800 cursor-pointer"
+                      >
+                        Copy Domain: {window.location.hostname}
+                      </button>
+                      <a
+                        href="https://console.firebase.google.com/project/gen-lang-client-0035122854/authentication/settings"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2.5 py-1 bg-red-800/80 hover:bg-red-700 text-white rounded text-[11px] font-medium underline"
+                      >
+                        Open Firebase Authorized Domains →
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

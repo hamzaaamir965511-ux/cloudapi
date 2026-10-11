@@ -158,13 +158,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearAuthError = () => setAuthError(null);
 
+  const formatFirebaseAuthError = (err: any, fallbackMsg: string): string => {
+    const code = err?.code || '';
+    const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '';
+    if (code === 'auth/unauthorized-domain' || String(err?.message || '').includes('auth/unauthorized-domain')) {
+      return `Domain "${currentDomain}" is not yet authorized in Firebase Authentication. Add "${currentDomain}" to Firebase Console → Authentication → Settings → Authorized domains (Project: gen-lang-client-0035122854), or open the app via the AI Studio preview pane.`;
+    }
+    if (code === 'auth/operation-not-allowed') {
+      return 'Email/Password sign-in is not yet enabled in your Firebase project. Please sign in with Google or enable Email/Password provider in Firebase Console → Authentication → Sign-in method.';
+    }
+    return err?.message || fallbackMsg;
+  };
+
   const signInWithGoogle = async () => {
     setAuthError(null);
     try {
       const cred = await signInWithPopup(auth, googleProvider);
       await ensureFirestoreProfile(cred.user);
     } catch (err: any) {
-      setAuthError(err?.message || 'Google sign-in failed.');
+      setAuthError(formatFirebaseAuthError(err, 'Google sign-in failed.'));
       throw err;
     }
   };
@@ -175,13 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
       await ensureFirestoreProfile(cred.user);
     } catch (err: any) {
-      if (err?.code === 'auth/operation-not-allowed') {
-        setAuthError(
-          'Email/Password sign-in is not yet enabled in your Firebase project. Please sign in with Google or enable Email/Password provider in Firebase Console -> Authentication -> Sign-in method.'
-        );
-      } else {
-        setAuthError(err?.message || 'Invalid email or password.');
-      }
+      setAuthError(formatFirebaseAuthError(err, 'Invalid email or password.'));
       throw err;
     }
   };
@@ -199,13 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await sendEmailVerification(cred.user);
       await ensureFirestoreProfile(cred.user, displayName.trim(), orgName.trim());
     } catch (err: any) {
-      if (err?.code === 'auth/operation-not-allowed') {
-        setAuthError(
-          'Email/Password registration requires enabling the Email/Password provider in your Firebase Console (Authentication -> Sign-in method), or use Google Sign-In.'
-        );
-      } else {
-        setAuthError(err?.message || 'Failed to register user account.');
-      }
+      setAuthError(formatFirebaseAuthError(err, 'Failed to register user account.'));
       throw err;
     }
   };
