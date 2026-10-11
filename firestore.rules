@@ -1,0 +1,382 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net — Default Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isBootstrappedAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'hamzaaamir965511@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // 3. Entity Validation Blueprints (Anti-Update-Gap)
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'organizationName', 'role', 'timezone', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'organizationName', 'role', 'timezone', 'createdAt', 'updatedAt'])
+        && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.uid == request.auth.uid
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && data.organizationName is string && data.organizationName.size() >= 1 && data.organizationName.size() <= 160
+        && data.role is string && data.role in ['owner', 'admin', 'operator']
+        && data.timezone is string && data.timezone.size() >= 1 && data.timezone.size() <= 64
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateInfo(data) {
+      return data.keys().hasAll(['uid', 'email', 'notificationEmail', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'notificationEmail', 'updatedAt'])
+        && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.uid == request.auth.uid
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.notificationEmail is string && data.notificationEmail.size() >= 3 && data.notificationEmail.size() <= 254
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidWabaAccount(data) {
+      return data.keys().hasAll([
+          'userId', 'wabaId', 'phoneNumberId', 'displayPhoneNumber', 'verifiedName',
+          'qualityRating', 'messagingLimitTier', 'status', 'onboardingMethod',
+          'webhookSubscribed', 'lastHealthCheckAt', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'wabaId', 'phoneNumberId', 'displayPhoneNumber', 'verifiedName',
+          'qualityRating', 'messagingLimitTier', 'status', 'onboardingMethod',
+          'webhookSubscribed', 'lastHealthCheckAt', 'createdAt', 'updatedAt'
+        ])
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 && data.userId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.userId == request.auth.uid
+        && data.wabaId is string && data.wabaId.size() >= 5 && data.wabaId.size() <= 64 && data.wabaId.matches('^[0-9a-zA-Z_\\-]+$')
+        && data.phoneNumberId is string && data.phoneNumberId.size() >= 5 && data.phoneNumberId.size() <= 64 && data.phoneNumberId.matches('^[0-9a-zA-Z_\\-]+$')
+        && data.displayPhoneNumber is string && data.displayPhoneNumber.size() >= 5 && data.displayPhoneNumber.size() <= 32
+        && data.verifiedName is string && data.verifiedName.size() >= 1 && data.verifiedName.size() <= 120
+        && data.qualityRating is string && data.qualityRating in ['GREEN', 'YELLOW', 'RED', 'UNKNOWN']
+        && data.messagingLimitTier is string && data.messagingLimitTier.size() >= 1 && data.messagingLimitTier.size() <= 64
+        && data.status is string && data.status in ['CONNECTED', 'DISCONNECTED', 'TOKEN_EXPIRED', 'PENDING_VERIFICATION']
+        && data.onboardingMethod is string && data.onboardingMethod in ['EMBEDDED_SIGNUP', 'SYSTEM_USER_TOKEN']
+        && data.webhookSubscribed is bool
+        && data.lastHealthCheckAt is timestamp
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidContact(data) {
+      return data.keys().hasAll([
+          'userId', 'wabaAccountId', 'waId', 'profileName', 'email', 'company',
+          'tags', 'optInStatus', 'optInSource', 'notes', 'lastInboundAt',
+          'lastMessagePreview', 'conversationStatus', 'unreadCount', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'wabaAccountId', 'waId', 'profileName', 'email', 'company',
+          'tags', 'optInStatus', 'optInSource', 'notes', 'lastInboundAt',
+          'lastMessagePreview', 'conversationStatus', 'unreadCount', 'createdAt', 'updatedAt'
+        ])
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 && data.userId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.userId == request.auth.uid
+        && data.wabaAccountId is string && data.wabaAccountId.size() >= 1 && data.wabaAccountId.size() <= 128 && data.wabaAccountId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.waId is string && data.waId.size() >= 7 && data.waId.size() <= 24 && data.waId.matches('^\\+?[0-9]{7,20}$')
+        && data.profileName is string && data.profileName.size() >= 1 && data.profileName.size() <= 120
+        && data.email is string && data.email.size() <= 254
+        && data.company is string && data.company.size() <= 120
+        && data.tags is list && data.tags.size() <= 10 && (data.tags.size() == 0 || (data.tags[0] is string && data.tags[0].size() <= 40))
+        && data.optInStatus is string && data.optInStatus in ['OPTED_IN', 'OPTED_OUT', 'PENDING']
+        && data.optInSource is string && data.optInSource.size() <= 80
+        && data.notes is string && data.notes.size() <= 1000
+        && data.lastInboundAt is string && data.lastInboundAt.size() <= 64
+        && data.lastMessagePreview is string && data.lastMessagePreview.size() <= 500
+        && data.conversationStatus is string && data.conversationStatus in ['OPEN', 'PENDING', 'RESOLVED']
+        && data.unreadCount is int && data.unreadCount >= 0 && data.unreadCount <= 10000
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll([
+          'userId', 'wabaAccountId', 'contactId', 'recipientPhone', 'direction',
+          'messageType', 'body', 'templateName', 'templateLanguage', 'mediaUrl',
+          'mediaCaption', 'metaMessageId', 'status', 'errorCode', 'errorMessage',
+          'rawApiResponse', 'retryCount', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'wabaAccountId', 'contactId', 'recipientPhone', 'direction',
+          'messageType', 'body', 'templateName', 'templateLanguage', 'mediaUrl',
+          'mediaCaption', 'metaMessageId', 'status', 'errorCode', 'errorMessage',
+          'rawApiResponse', 'retryCount', 'createdAt', 'updatedAt'
+        ])
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 && data.userId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.userId == request.auth.uid
+        && data.wabaAccountId is string && data.wabaAccountId.size() >= 1 && data.wabaAccountId.size() <= 128 && data.wabaAccountId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.contactId is string && data.contactId.size() >= 1 && data.contactId.size() <= 128 && data.contactId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.recipientPhone is string && data.recipientPhone.size() >= 7 && data.recipientPhone.size() <= 24 && data.recipientPhone.matches('^\\+?[0-9]{7,20}$')
+        && data.direction is string && data.direction in ['INBOUND', 'OUTBOUND']
+        && data.messageType is string && data.messageType in ['text', 'template', 'image', 'document', 'audio', 'video']
+        && data.body is string && data.body.size() <= 4096
+        && data.templateName is string && data.templateName.size() <= 128
+        && data.templateLanguage is string && data.templateLanguage.size() <= 32
+        && data.mediaUrl is string && data.mediaUrl.size() <= 1024
+        && data.mediaCaption is string && data.mediaCaption.size() <= 1024
+        && data.metaMessageId is string && data.metaMessageId.size() <= 160
+        && data.status is string && data.status in ['QUEUED', 'ACCEPTED', 'SENT', 'DELIVERED', 'READ', 'FAILED']
+        && data.errorCode is string && data.errorCode.size() <= 64
+        && data.errorMessage is string && data.errorMessage.size() <= 500
+        && data.rawApiResponse is string && data.rawApiResponse.size() <= 4096
+        && data.retryCount is int && data.retryCount >= 0 && data.retryCount <= 10
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTemplate(data) {
+      return data.keys().hasAll([
+          'userId', 'wabaAccountId', 'metaTemplateId', 'name', 'language',
+          'category', 'status', 'headerText', 'bodyText', 'footerText', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'wabaAccountId', 'metaTemplateId', 'name', 'language',
+          'category', 'status', 'headerText', 'bodyText', 'footerText', 'createdAt', 'updatedAt'
+        ])
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 && data.userId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.userId == request.auth.uid
+        && data.wabaAccountId is string && data.wabaAccountId.size() >= 1 && data.wabaAccountId.size() <= 128 && data.wabaAccountId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.metaTemplateId is string && data.metaTemplateId.size() <= 128
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 128 && data.name.matches('^[a-z0-9_]+$')
+        && data.language is string && data.language.size() >= 2 && data.language.size() <= 32
+        && data.category is string && data.category in ['MARKETING', 'UTILITY', 'AUTHENTICATION']
+        && data.status is string && data.status in ['APPROVED', 'PENDING', 'REJECTED', 'PAUSED']
+        && data.headerText is string && data.headerText.size() <= 120
+        && data.bodyText is string && data.bodyText.size() >= 1 && data.bodyText.size() <= 1024
+        && data.footerText is string && data.footerText.size() <= 120
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidWebhookEvent(data) {
+      return data.keys().hasAll([
+          'userId', 'wabaId', 'phoneNumberId', 'eventType',
+          'signatureVerified', 'summary', 'payloadSnippet', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'wabaId', 'phoneNumberId', 'eventType',
+          'signatureVerified', 'summary', 'payloadSnippet', 'createdAt'
+        ])
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 && data.userId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.userId == request.auth.uid
+        && data.wabaId is string && data.wabaId.size() <= 64
+        && data.phoneNumberId is string && data.phoneNumberId.size() <= 64
+        && data.eventType is string && data.eventType in ['messages', 'statuses', 'template_status_update', 'account_update']
+        && data.signatureVerified is bool
+        && data.summary is string && data.summary.size() <= 500
+        && data.payloadSnippet is string && data.payloadSnippet.size() <= 4096
+        && data.createdAt is timestamp;
+    }
+
+    // 4. Collection Match Blocks
+    match /admins/{adminId} {
+      allow get: if isOwner(adminId) || isBootstrappedAdmin();
+      allow list, create, update, delete: if false;
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isBootstrappedAdmin());
+      allow list: if false;
+      allow create: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().role == 'owner'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().role == existing().role
+        && (incoming().createdAt == existing().createdAt || incoming().createdAt == request.time)
+        && incoming().updatedAt == request.time
+        && (
+          isBootstrappedAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'organizationName', 'timezone', 'createdAt', 'updatedAt'])
+        );
+      allow delete: if false;
+
+      // Split Collection Strategy for PII Isolation
+      match /private/{docId} {
+        allow get: if isValidId(userId) && isValidId(docId) && isOwner(userId)
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow list: if false;
+        allow create: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(docId)
+          && isValidUserPrivateInfo(incoming())
+          && incoming().updatedAt == request.time
+          && get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+        allow update: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(docId)
+          && isValidUserPrivateInfo(incoming())
+          && incoming().uid == existing().uid
+          && incoming().updatedAt == request.time
+          && get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid
+          && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'notificationEmail', 'updatedAt']);
+        allow delete: if false;
+      }
+    }
+
+    match /waba_accounts/{accountId} {
+      allow get: if isValidId(accountId) && isOwner(existing().userId);
+      allow list: if isVerifiedUser() && existing().userId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(accountId)
+        && isValidWabaAccount(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      allow update: if isVerifiedUser()
+        && isValidId(accountId)
+        && isValidWabaAccount(incoming())
+        && isOwner(existing().userId)
+        && incoming().userId == existing().userId
+        && incoming().wabaId == existing().wabaId
+        && incoming().phoneNumberId == existing().phoneNumberId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isBootstrappedAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'displayPhoneNumber', 'verifiedName', 'qualityRating',
+            'messagingLimitTier', 'status', 'webhookSubscribed',
+            'lastHealthCheckAt', 'updatedAt'
+          ])
+        );
+      allow delete: if isValidId(accountId) && isOwner(existing().userId);
+    }
+
+    match /contacts/{contactId} {
+      allow get: if isValidId(contactId) && isOwner(existing().userId);
+      allow list: if isVerifiedUser() && existing().userId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(contactId)
+        && isValidContact(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/waba_accounts/$(incoming().wabaAccountId))
+        && get(/databases/$(database)/documents/waba_accounts/$(incoming().wabaAccountId)).data.userId == request.auth.uid;
+      allow update: if isVerifiedUser()
+        && isValidId(contactId)
+        && isValidContact(incoming())
+        && isOwner(existing().userId)
+        && incoming().userId == existing().userId
+        && incoming().wabaAccountId == existing().wabaAccountId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isBootstrappedAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'profileName', 'email', 'company', 'tags', 'optInStatus',
+            'optInSource', 'notes', 'conversationStatus', 'unreadCount',
+            'lastInboundAt', 'lastMessagePreview', 'updatedAt'
+          ])
+        );
+      allow delete: if isValidId(contactId) && isOwner(existing().userId);
+    }
+
+    match /messages/{messageId} {
+      allow get: if isValidId(messageId) && isOwner(existing().userId);
+      allow list: if isVerifiedUser() && existing().userId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(messageId)
+        && isValidMessage(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/waba_accounts/$(incoming().wabaAccountId))
+        && get(/databases/$(database)/documents/waba_accounts/$(incoming().wabaAccountId)).data.userId == request.auth.uid
+        && exists(/databases/$(database)/documents/contacts/$(incoming().contactId))
+        && get(/databases/$(database)/documents/contacts/$(incoming().contactId)).data.userId == request.auth.uid;
+      allow update: if isVerifiedUser()
+        && isValidId(messageId)
+        && isValidMessage(incoming())
+        && isOwner(existing().userId)
+        && incoming().userId == existing().userId
+        && incoming().wabaAccountId == existing().wabaAccountId
+        && incoming().contactId == existing().contactId
+        && incoming().direction == existing().direction
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && existing().status != 'READ'
+        && (
+          isBootstrappedAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'metaMessageId', 'status', 'errorCode', 'errorMessage',
+            'rawApiResponse', 'retryCount', 'updatedAt'
+          ])
+        );
+      allow delete: if false;
+    }
+
+    match /templates/{templateId} {
+      allow get: if isValidId(templateId) && isOwner(existing().userId);
+      allow list: if isVerifiedUser() && existing().userId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(templateId)
+        && isValidTemplate(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && exists(/databases/$(database)/documents/waba_accounts/$(incoming().wabaAccountId))
+        && get(/databases/$(database)/documents/waba_accounts/$(incoming().wabaAccountId)).data.userId == request.auth.uid;
+      allow update: if isVerifiedUser()
+        && isValidId(templateId)
+        && isValidTemplate(incoming())
+        && isOwner(existing().userId)
+        && incoming().userId == existing().userId
+        && incoming().wabaAccountId == existing().wabaAccountId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isBootstrappedAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'metaTemplateId', 'status', 'category', 'headerText',
+            'bodyText', 'footerText', 'updatedAt'
+          ])
+        );
+      allow delete: if isValidId(templateId) && isOwner(existing().userId);
+    }
+
+    match /webhook_events/{eventId} {
+      allow get: if isValidId(eventId) && isOwner(existing().userId);
+      allow list: if isVerifiedUser() && existing().userId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(eventId)
+        && isValidWebhookEvent(incoming())
+        && incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+  }
+}

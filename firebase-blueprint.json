@@ -1,0 +1,512 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public workspace profile and role assignment for an authenticated SaaS user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Auth UID",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User full name",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "organizationName": {
+          "type": "string",
+          "description": "Business organization name",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "role": {
+          "type": "string",
+          "description": "Workspace RBAC role",
+          "enum": ["owner", "admin", "operator"]
+        },
+        "timezone": {
+          "type": "string",
+          "description": "IANA timezone identifier",
+          "maxLength": 64
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "displayName", "organizationName", "role", "timezone", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII and account contact credentials for a user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "notificationEmail": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "notificationEmail", "updatedAt"]
+    },
+    "WabaAccount": {
+      "title": "WabaAccount",
+      "description": "Authorized Meta WhatsApp Business Account and Phone Number connection.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "wabaId": {
+          "type": "string",
+          "description": "Meta WhatsApp Business Account ID",
+          "minLength": 5,
+          "maxLength": 64,
+          "pattern": "^[0-9a-zA-Z_\\-]+$"
+        },
+        "phoneNumberId": {
+          "type": "string",
+          "description": "Meta Phone Number ID",
+          "minLength": 5,
+          "maxLength": 64,
+          "pattern": "^[0-9a-zA-Z_\\-]+$"
+        },
+        "displayPhoneNumber": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 32
+        },
+        "verifiedName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "qualityRating": {
+          "type": "string",
+          "enum": ["GREEN", "YELLOW", "RED", "UNKNOWN"]
+        },
+        "messagingLimitTier": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "status": {
+          "type": "string",
+          "enum": ["CONNECTED", "DISCONNECTED", "TOKEN_EXPIRED", "PENDING_VERIFICATION"]
+        },
+        "onboardingMethod": {
+          "type": "string",
+          "enum": ["EMBEDDED_SIGNUP", "SYSTEM_USER_TOKEN"]
+        },
+        "webhookSubscribed": {
+          "type": "boolean"
+        },
+        "lastHealthCheckAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "wabaId",
+        "phoneNumberId",
+        "displayPhoneNumber",
+        "verifiedName",
+        "qualityRating",
+        "messagingLimitTier",
+        "status",
+        "onboardingMethod",
+        "webhookSubscribed",
+        "lastHealthCheckAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Contact": {
+      "title": "Contact",
+      "description": "WhatsApp recipient contact record with E.164 phone number and opt-in consent.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "wabaAccountId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "waId": {
+          "type": "string",
+          "description": "E.164 WhatsApp phone number without plus or with plus",
+          "minLength": 7,
+          "maxLength": 24,
+          "pattern": "^\\+?[0-9]{7,20}$"
+        },
+        "profileName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "company": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "tags": {
+          "type": "array",
+          "description": "Up to 10 segmentation tags"
+        },
+        "optInStatus": {
+          "type": "string",
+          "enum": ["OPTED_IN", "OPTED_OUT", "PENDING"]
+        },
+        "optInSource": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "lastInboundAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "lastMessagePreview": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "conversationStatus": {
+          "type": "string",
+          "enum": ["OPEN", "PENDING", "RESOLVED"]
+        },
+        "unreadCount": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "wabaAccountId",
+        "waId",
+        "profileName",
+        "email",
+        "company",
+        "tags",
+        "optInStatus",
+        "optInSource",
+        "notes",
+        "lastInboundAt",
+        "lastMessagePreview",
+        "conversationStatus",
+        "unreadCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Individual inbound or outbound WhatsApp Cloud API message with real delivery telemetry.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "wabaAccountId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "contactId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "recipientPhone": {
+          "type": "string",
+          "minLength": 7,
+          "maxLength": 24,
+          "pattern": "^\\+?[0-9]{7,20}$"
+        },
+        "direction": {
+          "type": "string",
+          "enum": ["INBOUND", "OUTBOUND"]
+        },
+        "messageType": {
+          "type": "string",
+          "enum": ["text", "template", "image", "document", "audio", "video"]
+        },
+        "body": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "templateName": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "templateLanguage": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "mediaUrl": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "mediaCaption": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "metaMessageId": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "status": {
+          "type": "string",
+          "enum": ["QUEUED", "ACCEPTED", "SENT", "DELIVERED", "READ", "FAILED"]
+        },
+        "errorCode": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "errorMessage": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "rawApiResponse": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "retryCount": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "wabaAccountId",
+        "contactId",
+        "recipientPhone",
+        "direction",
+        "messageType",
+        "body",
+        "templateName",
+        "templateLanguage",
+        "mediaUrl",
+        "mediaCaption",
+        "metaMessageId",
+        "status",
+        "errorCode",
+        "errorMessage",
+        "rawApiResponse",
+        "retryCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Template": {
+      "title": "Template",
+      "description": "Approved or pending Meta WhatsApp message template synced from Graph API.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "wabaAccountId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "metaTemplateId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "language": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 32
+        },
+        "category": {
+          "type": "string",
+          "enum": ["MARKETING", "UTILITY", "AUTHENTICATION"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["APPROVED", "PENDING", "REJECTED", "PAUSED"]
+        },
+        "headerText": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "bodyText": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "footerText": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "wabaAccountId",
+        "metaTemplateId",
+        "name",
+        "language",
+        "category",
+        "status",
+        "headerText",
+        "bodyText",
+        "footerText",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "WebhookEvent": {
+      "title": "WebhookEvent",
+      "description": "Verified Meta Graph API webhook event log for inbound messages and status receipts.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "wabaId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "phoneNumberId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "eventType": {
+          "type": "string",
+          "enum": ["messages", "statuses", "template_status_update", "account_update"]
+        },
+        "signatureVerified": {
+          "type": "boolean"
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "payloadSnippet": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "wabaId",
+        "phoneNumberId",
+        "eventType",
+        "signatureVerified",
+        "summary",
+        "payloadSnippet",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Public workspace profile per user"
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Isolated PII contact credentials per user"
+    },
+    "/waba_accounts/{accountId}": {
+      "schema": { "$ref": "#/entities/WabaAccount" },
+      "description": "Connected Meta WhatsApp Business accounts scoped by userId"
+    },
+    "/contacts/{contactId}": {
+      "schema": { "$ref": "#/entities/Contact" },
+      "description": "WhatsApp customer contacts and conversation threads scoped by userId"
+    },
+    "/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Inbound and outbound WhatsApp Cloud API messages scoped by userId"
+    },
+    "/templates/{templateId}": {
+      "schema": { "$ref": "#/entities/Template" },
+      "description": "Meta WhatsApp message templates scoped by userId"
+    },
+    "/webhook_events/{eventId}": {
+      "schema": { "$ref": "#/entities/WebhookEvent" },
+      "description": "Verified incoming Meta Graph API webhook events scoped by userId"
+    }
+  }
+}

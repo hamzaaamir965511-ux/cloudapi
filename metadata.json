@@ -1,0 +1,6 @@
+{
+  "name": "NexusWA Cloud — Enterprise WhatsApp Business API SaaS",
+  "description": "Production-grade Meta WhatsApp Business Cloud API management platform with Embedded Signup, real-time omnichannel inbox, template sync, and contact CRM.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
